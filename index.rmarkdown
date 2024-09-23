@@ -110,9 +110,6 @@ suicide_clean <-
 
 setdiff(suicide_clean$countries, pop_clean$country)
 
-```
-
-```{r include=F}
 suicide_19 <- suicide_clean %>% 
   select(countries, `2019`)
 
@@ -257,6 +254,9 @@ View(complete_data)
 ```
 
 ```{r include=FALSE}
+
+# Plots
+
 suicide_plot <- 
   suicide_clean3 %>% 
   filter(suicides > 10000) %>% 
@@ -283,7 +283,51 @@ top_5_graph <-
   theme_grey()
 top_5_graph
 
+top_5_countries <- 
+  suicide_19 %>% 
+  arrange(desc(`2019`)) %>% 
+  head(5) %>% 
+  mutate(tooltip_label = paste(countries, 
+                               `2019`, 
+                               sep = ": ")) %>% 
+  ggplot(aes(y = reorder(countries, `2019`), 
+             x = `2019`, 
+             fill = `2019`, 
+             text = tooltip_label)) + 
+  geom_col() +  
+  labs(y = "Country", 
+       x = "Number of Suicides") + 
+  theme(legend.position = "none") 
 
+
+top_5_countries_ggplotly <- 
+  ggplotly(top_5_countries, tooltip = "text")
+
+top_5_countries
+
+
+
+top_5_countries_10k <- 
+  suicide_pop %>% 
+  arrange(desc(suicide_per10K)) %>% 
+  head(5) %>% 
+  mutate(tooltip_label = paste(countries, 
+                               suicide_per10K, 
+                               sep = ": ")) %>% 
+  ggplot(aes(y = reorder(countries, suicide_per10K), 
+             x = suicide_per10K, 
+             fill = round(suicide_per10K, 2), 
+             text = tooltip_label)) + 
+  geom_col() +  
+  labs(y = "Country", 
+       x = "Number of Suicides per 10,000 people") + 
+  theme(legend.position = "none") 
+
+
+top_5_countries_10k_ggplotly <- 
+  ggplotly(top_5_countries_10k, tooltip = "text")
+
+top_5_countries_10k
 
 ```
 
@@ -345,56 +389,6 @@ suicide_map_ggplotly <- ggplotly(suicide_map, tooltip = "text")
 
 ```{r include=FALSE}
 
-# Plots
-
-top_5_countries <- 
-  suicide_19 %>% 
-  arrange(desc(`2019`)) %>% 
-  head(5) %>% 
-  mutate(tooltip_label = paste(countries, 
-                               `2019`, 
-                               sep = ": ")) %>% 
-  ggplot(aes(y = reorder(countries, `2019`), 
-             x = `2019`, 
-             fill = `2019`, 
-             text = tooltip_label)) + 
-  geom_col() +  
-  labs(y = "Country", 
-       x = "Number of Suicides") + 
-  theme(legend.position = "none") 
-
-
-top_5_countries_ggplotly <- 
-  ggplotly(top_5_countries, tooltip = "text")
-
-top_5_countries
-
-
-
-top_5_countries_10k <- 
-  suicide_pop %>% 
-  arrange(desc(suicide_per10K)) %>% 
-  head(5) %>% 
-  mutate(tooltip_label = paste(countries, 
-                               suicide_per10K, 
-                               sep = ": ")) %>% 
-  ggplot(aes(y = reorder(countries, suicide_per10K), 
-             x = suicide_per10K, 
-             fill = round(suicide_per10K, 2), 
-             text = tooltip_label)) + 
-  geom_col() +  
-  labs(y = "Country", 
-       x = "Number of Suicides per 10,000 people") + 
-  theme(legend.position = "none") 
-
-
-top_5_countries_10k_ggplotly <- 
-  ggplotly(top_5_countries_10k, tooltip = "text")
-
-top_5_countries_10k
-```
-
-```{r include=FALSE}
 # Dynamic plots
 
 happy_suicide_plot <- 
@@ -443,6 +437,21 @@ complete_plot_top <-
        y = "Human Development Index",
        colour = "Countries")
 
+plot_top_hdi <- 
+  complete_data %>% 
+  filter(year > 2005) %>% 
+  filter(country %in% c("USA", "Switzerland", "Norway")) %>% 
+ ggplot(aes(x = suicides, 
+            y = hdi, 
+            frame = year,
+            color = country)) +
+ geom_point() +
+ scale_x_log10() +
+ theme_minimal() +
+  labs(x = "Suicides",
+       y = "Human Development Index",
+       colour = "Countries")
+
 
 hdi_suicide_uae <- 
   complete_data %>% 
@@ -462,6 +471,8 @@ hdi_suicide_uae <-
 complete_10k_ggplotly <- ggplotly(complete_plot_10k)
 
 complete_top_ggplotly <- ggplotly(complete_plot_top)
+
+top_hdi_ggplotly <- ggplotly(plot_top_hdi)
 
 uae_ggplotly <- ggplotly(hdi_suicide_uae)
 ```
@@ -537,17 +548,6 @@ top_5_countries_10k_ggplotly
 
 ## {width="50%"}
 
-### {height="50%"}
-
-
-```{r}
-uae_ggplotly
-```
-
-
-
-## {width="50%"}
-
 ```{r title = "Evolution of suicide rates and HDI in countries with highest number of suicides per 10,000 people"}
 complete_10k_ggplotly
 ```
@@ -556,6 +556,18 @@ complete_10k_ggplotly
 complete_top_ggplotly
 ```
 
+
+
+## {width="50%"}
+
+
+```{r}
+uae_ggplotly
+```
+
+```{r}
+plot_top_hdi
+```
 
 
 
