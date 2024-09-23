@@ -551,12 +551,12 @@ complete_top_ggplotly
 
 ## {width="50%"}
 
-```{r}
+```{r title = "Evolution of suicide rate and HDI in the United Arab Emirates"}
 uae_ggplotly
 ```
 
-```{r}
-plot_top_hdi
+```{r title = "Evolution of suicide rate and HDI in the countries with highest HDI" }
+top_hdi_ggplotly
 ```
 
 
