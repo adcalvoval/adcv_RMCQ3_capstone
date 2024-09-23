@@ -222,10 +222,6 @@ suicide_clean3 <-
 View(suicide_clean3)
 
 
-
-
-
-
 setdiff(happy_clean$country, suicide_clean3$country)
 setdiff(suicide_clean3$country, happy_clean$country)
 
@@ -241,6 +237,15 @@ hdi_long <-
                values_to = "hdi")
 
 View(hdi_long)
+
+top_hdi <- 
+  hdi_long %>%
+  group_by(year) %>%
+  slice_max(hdi, n = 1) %>%  
+  select(year, country, hdi)  
+
+View(top_hdi)
+
 
 setdiff(happy_clean$country, hdi$country)
 setdiff(hdi$country, happy_clean$country)
@@ -412,14 +417,17 @@ ggplotly(happy_suicide_plot)
 complete_plot_10k <- 
   complete_data %>% 
   filter(year > 2005) %>% 
-  filter(country %in% c("Lesotho", "Ukraine", "South Korea", "Guyana", "Suriname", "UAE")) %>% 
+  filter(country %in% c("Lesotho", "Ukraine", "South Korea", "Guyana", "Suriname")) %>% 
  ggplot(aes(x = suicides, 
             y = hdi, 
             frame = year,
             color = country)) +
  geom_point() +
  scale_x_log10() +
- theme_minimal()
+ theme_minimal() +
+  labs(x = "Suicides",
+       y = "Human Development Index",
+       colour = "Countries")
 
 
 complete_plot_top <- 
@@ -432,11 +440,32 @@ complete_plot_top <-
             color = country)) +
  geom_point() +
  scale_x_log10() +
- theme_minimal()
+ theme_minimal() +
+  labs(x = "Suicides",
+       y = "Human Development Index",
+       colour = "Countries")
 
-complete_top_ggplotly <- ggplotly(complete_plot_10k)
 
-complete_10K_ggplotly <- ggplotly(complete_plot_top)
+hdi_suicide_uae <- 
+  complete_data %>% 
+  filter(year > 2005) %>% 
+  filter(country == "UAE") %>% 
+ ggplot(aes(x = suicides, 
+            y = hdi, 
+            frame = year,
+            color = country)) +
+ geom_point() +
+ scale_x_log10() +
+ theme_minimal() +
+  labs(x = "Suicides",
+       y = "Human Development Index",
+       colour = "Country")
+
+complete_10k_ggplotly <- ggplotly(complete_plot_10k)
+
+complete_top_ggplotly <- ggplotly(complete_plot_top)
+
+uae_ggplotly <- ggplotly(hdi_suicide_uae)
 ```
 
 
@@ -500,13 +529,23 @@ top_5_countries_10k_ggplotly
 # PLOTS
 
 ## {width="50%"}
+
+### {height="50%"}
+
+```{r}
+uae_ggplotly
+```
+
+
+## {width="50%"}
 ```{r title = "Evolution of suicide rates and HDI in countries with highest number of suicides per 10,000 people"}
-complete_10K_ggplotly
+complete_10k_ggplotly
 ```
 
 ```{r title = "Evolution of suicide rates and HDI in countries with highest number of suicides"}
 complete_top_ggplotly
 ```
+
 
 
 
