@@ -539,7 +539,7 @@ top_5_countries_10k_ggplotly
 
 # PLOTS
 
-## {width="50%"}
+## {height="50%"}
 ```{r title = "Evolution of suicide rates and HDI in countries with highest number of suicides per 10,000 people"}
 complete_10k_ggplotly
 ```
@@ -549,7 +549,7 @@ complete_top_ggplotly
 ```
 
 
-## {width="50%"}
+## {height="50%"}
 
 ```{r title = "Evolution of suicide rate and HDI in the United Arab Emirates"}
 uae_ggplotly
