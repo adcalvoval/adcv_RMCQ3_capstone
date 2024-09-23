@@ -1,0 +1,14 @@
+---
+title: "DASHBOARD TITLE"
+author: "Adrián CALVO VALDERRAMA"
+format: 
+  dashboard:
+    logo: images/LOGO_IMAGE.png
+    nav-buttons: [github]
+    github: https://github.com/YOUR_URL
+theme: lux
+execute:
+  echo: false
+  warning: false
+  message: false
+---
