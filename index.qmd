@@ -10,6 +10,9 @@ format:
     - icon: clipboard2-data
       href: https://www.gapminder.org/data/
       target: _blank
+    - icon: globe
+      href: https://data.worldbank.org/indicator/SP.POP.TOTL?most_recent_year_desc=false
+      target: _blank
 theme: flatly
 execute:
   echo: false
