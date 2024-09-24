@@ -318,7 +318,6 @@ complete_data <-
 View(complete_data)
 ```
 
-
 ```{r include=FALSE}
 
 # Plots
@@ -419,7 +418,6 @@ uae_plot <- complete_data %>%
 uae_plot
 
 ```
-
 
 ```{r include=FALSE}
 
@@ -584,9 +582,11 @@ uae_ggplotly <- ggplotly(hdi_suicide_uae)
 
 
 
+
 # HOME
 
 ## Row 1 {height="25%"}
+
 
 ```{r}
 value_box(
@@ -618,27 +618,34 @@ value_box(
 )
 ```
 
+
 ## Row 2 {height="75%"}
 
 ###  {width="60%"}
+
 
 ```{r title = "Number of suicides per 10,000 people per country in 2019"}
 suicide_map_ggplotly 
 ```
 
+
 ###  {width="40%"}
 
 ####  {height="50%"}
+
 
 ```{r title = "Top 5 countries: number of suicides in 2019"}
 top_5_countries_ggplotly
 ```
 
+
 ####  {height="50%"}
+
 
 ```{r title = "Top 5 countries: number of suicides per 10,000 people in 2019"}
 top_5_countries_10k_ggplotly
 ```
+
 
 # HDI
 
@@ -659,25 +666,31 @@ Switzerland, Norway, Lesotho, Guyana and Lithuania all see increases in HDI scor
 
 ### {width="50%"}
 
+
 ```{r title = "Evolution of suicide rates and HDI in countries with highest number of suicides"}
 complete_top_ggplotly
 ```
+
 
 
 ## {height="50%" .flow}
 
 ### {width="50%"}
 
+
 ```{r title = "Evolution of suicide rate and HDI in the countries with highest HDI" }
 top_hdi_ggplotly
 ```
 
+
 ### {width="50%"}
+
 
 
 ```{r title = "Evolution of suicide rates and HDI in countries with highest number of suicides per 10,000 people"}
 complete_10k_ggplotly
 ```
+
 
 
 # DATA
@@ -686,9 +699,11 @@ complete_10k_ggplotly
 
 ### {width="50%"}
 
+
 ```{r title = "Evolution of suicide rate and population size in the UAE"}
 uae_plot
 ```
+
 
 ### {width="50%"}
 
@@ -698,9 +713,11 @@ The UAE shows the greatest relative increase in the reported number of suicides 
 
 ### {width="50%"}
 
+
 ```{r}
 happy_suicide_ggplotly
 ```
+
 
 ### {width="50%"}
 
@@ -722,6 +739,7 @@ The original datasets used for this analysis can also be found at the top right 
 
 
 
+
 ```{r}
 library(htmltools)
 
@@ -738,6 +756,7 @@ tags$button("Download as CSV",
 )
 ```
 
+
 # ABOUT
 
 The data used for this analysis comes in part from the r `gapminder` package, and is originally sourced from the Gapminder Foundation. Additionally, population data from the World Bank was used.
@@ -751,3 +770,4 @@ An example of one of Hans Rosling's videos is shown below:
 <iframe width="560" height="315" src="https://www.youtube.com/embed/hVimVzgtD6w?si=hjxf5ryxh7mx5A4R" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
 
 </iframe>
+
