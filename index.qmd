@@ -577,7 +577,7 @@ uae_ggplotly <- ggplotly(hdi_suicide_uae)
 ```{r}
 value_box(
   title = "Country with highest number of suicides in 2019",
-  value = tags$p(highest_suicide_country, style = "font-size: 200%;"),
+  value = tags$p(highest_suicide_country, style = "font-size: 250%;"),
   showcase = bsicons::bs_icon("geo"),
   theme = value_box_theme(bg = "#214773"),
   p(paste0("Number of suicides in 2019: ", highest_suicide_19))
@@ -587,7 +587,7 @@ value_box(
 ```{r}
 value_box(
   title = "Country with highest number of suicides per 10,000 people in 2019",
-  value = tags$p(highest_suicide_country_10K, style = "font-size: 200%;"),
+  value = tags$p(highest_suicide_country_10K, style = "font-size: 250%;"),
   showcase = bsicons::bs_icon("geo-fill"),
   theme = value_box_theme(bg = "#518fd6"),
   p(paste0("Number of suicides in 2019: ", total_suicide_greenland_19))
@@ -597,7 +597,7 @@ value_box(
 ```{r}
 value_box(
   title = "Country with highest relative increase in the reported number of suicides",
-  value = tags$p(highest_increase_90_19_country, style = "font-size: 200%;"),
+  value = tags$p(highest_increase_90_19_country, style = "font-size: 250%;"),
   showcase = bsicons::bs_icon("graph-up-arrow"),
   theme = value_box_theme(bg = "#701515"),
   p(paste0("Increase between 1990 and 2019: ", highest_increase_90_19, " %"))
