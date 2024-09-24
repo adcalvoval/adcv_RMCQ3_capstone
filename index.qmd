@@ -64,25 +64,6 @@ suicide_clean <-
   mutate(across(`1990`:`2019`, ~ str_replace_all(.x, "(\\d+\\.?\\d*)M", "\\1e6"))) %>%   
   mutate(across(`1990`:`2019`, ~ as.numeric(.x)))  
 
-# pop_clean <-
-#   world %>% 
-#   select(country, pop_total) %>% 
-#   mutate(population = (pop_total * 1000000)) %>% 
-#   select(!pop_total)
-# 
-# 
-# pop_clean2 <-
-#   pop %>% 
-#   select(country,`1990`:`2019`) %>% 
-#     mutate(across(`1990`:`2019`, ~ str_replace_all(.x, "(\\d+\\.?\\d*)k", "\\1e3"))) %>%  
-#     mutate(across(`1990`:`2019`, ~ str_replace_all(.x, "(\\d+\\.?\\d*)M", "\\1e6"))) %>%   
-#     mutate(across(`1990`:`2019`, ~ as.numeric(.x))) %>% 
-#   pivot_longer(cols = `1990`:`2019`,
-#                names_to = "year",
-#                values_to = "population")
-
-
-# View(pop_clean2)
 
 pop_wb_clean <- 
   pop2 %>% 
@@ -229,7 +210,8 @@ happy_clean <-
              country == "Turkey" ~ "Turkiye",
          TRUE ~ country)) %>% 
   select(!country) %>% 
-  select(countries, everything())
+  select(countries, everything()) %>% 
+  mutate(year = as.numeric(year))
 
 View(happy_clean)
 
@@ -237,7 +219,8 @@ suicide_long <-
   suicide_clean %>%
   pivot_longer(cols = `1990`:`2019`,
                names_to = "year",
-               values_to = "suicides")
+               values_to = "suicides") %>% 
+  mutate(year = as.numeric(year))
 
 View(suicide_long)
 
@@ -263,7 +246,8 @@ hdi_long <-
              country == "Russia" ~ "Russian Federation",
          TRUE ~ country)) %>% 
   select(!country) %>% 
-  select(countries, everything())
+  select(countries, everything()) %>% 
+  mutate(year = as.numeric(year))
   
 
 View(hdi_long)
@@ -297,7 +281,8 @@ pop_long <-
              countries == "Lao PDR" ~ "Lao",
              countries == "West Bank and Gaza" ~ "Palestine",
              countries == "Gambia, The" ~ "Gambia",
-         TRUE ~ countries)) 
+         TRUE ~ countries)) %>% 
+  mutate(year = as.numeric(year))
 
 View(pop_long)
 
@@ -337,9 +322,9 @@ suicide_ggplotly <- ggplotly(suicide_plot)
 
 
 
-top_5_graph <-
+top_6_graph <-
   suicide_long %>%
-  filter(countries %in% c("Lesotho", "Guyana", "Suriname", "Greenland", "Lithuania", "UAE")) %>%  
+  filter(countries %in% c("Lesotho", "Guyana", "Suriname", "Greenland", "Lithuania", "UAE")) %>% 
       ggplot() +
   geom_line(aes(x = year,
                 y = suicides,
@@ -350,9 +335,10 @@ top_5_graph <-
   labs(x = "Year",
        y = "Suicides",
        colour = "Countries",
-       title =  str_wrap("Evolution of the number of reported suicides between 1990 and 2019 in highest reporting countries per 10,000 people", width = 80))
+       title =  str_wrap("Evolution of the number of reported suicides between 1990 and 2019 in highest reporting countries per 10,000 people", width = 80)) +
+  scale_x_continuous(breaks = seq(from = 1990, to = 2020, by = 10))
 
-top_5_graph
+top_6_graph
 
 top_5_countries <- 
   suicide_19 %>% 
@@ -694,6 +680,14 @@ uae_plot
 
 The UAE shows the greatest relative increase in the reported number of suicides between 1990 and 2019 (almost 500%). When comparing to population data (red curve), we can see the increase in the number of reported suicides (blue curve) is most likely linked to the demographic explosion the country has known in recent decades, particularly in cities such as Dubai and Abu Dhabi.
 
+The Happiness Score (WHR) represents the  national average response to the question of life evaluations asking the following “Please imagine a ladder, with steps numbered from 0 at the bottom to 10 at the top. The top of the ladder represents the best possible life for you and the bottom of the ladder represents the worst possible life for you. On which step of the ladder would you say you personally feel you stand at this time?” This measure is also referred to as Cantril life ladder.
+
+Comparing the suicide rates with the WHR shows a similar trend as with the HDI. Although the data is limited, increases in the WHR score do not show increases in suicide rates. Conversely, a decrease in the WHR score for the countries in scope (those with higher number of reported suicides per 10,000 people) do not show an increase in the number of reported suicides.
+
+This unfortunately excludes Greenland, for which this data is not available, despite having the highest number of reported suicides per 10,000 people.
+
+The graphs below also illustrate the difference in types of fluctuation in rates among the 5 countries with the highest number of reported suicides, as well as the UAE. It shows that both Lesotho and the UAE have significantly more marked increases between 1990 and 2019, although the UAE's case is maked by the huge population growth in the last 20 years. Lesotho's population growth has however been much steadier, indicating a more pronounce increase in reported suicides, relative to population growth. Greenland's rate, with the highest number of suicides per 10,000 people, has remain constant since 1990, whereas Lithuania has seen a significant and constant decrease since a peak in the mid 1990's.
+
 ## {height="50%"}
 
 ### {width="50%"}
@@ -705,12 +699,10 @@ happy_suicide_ggplotly
 ### {width="50%"}
 
  	
-The Happiness Score (WHR) represents the  national average response to the question of life evaluations asking the following “Please imagine a ladder, with steps numbered from 0 at the bottom to 10 at the top. The top of the ladder represents the best possible life for you and the bottom of the ladder represents the worst possible life for you. On which step of the ladder would you say you personally feel you stand at this time?” This measure is also referred to as Cantril life ladder.
-
-Comparing the suicide rates with the WHR shows a similar trend as with the HDI. Although the data is limited, increases in the WHR score do not show increases in suicide rates. Conversely, a decrease in the WHR score for the countries in scope (those with higher number of reported suicides per 10,000 people) do not show an increase in the number of reported suicides.
-
-This unfortunately excludes Greenland, for which this data is not available, despite having the highest number of reported suicides per 10,000 people.
-
+```{r}
+top_6_graph
+```
+ 	
 
 # DOWNLOAD
 
