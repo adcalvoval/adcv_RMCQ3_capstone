@@ -58,6 +58,9 @@ hdi<- read_csv(here("data/hdi_human_development_index.csv"))
 ```
 
 ```{r include=FALSE}
+
+# Creating variables and calculations
+
 suicide_clean <- 
   suicide %>%
   mutate(across(`1990`:`2019`, ~ str_replace_all(.x, "(\\d+\\.?\\d*)k", "\\1e3"))) %>%  
@@ -306,7 +309,7 @@ View(complete_data)
 
 ```{r include=FALSE}
 
-# Plots
+# Creating Plots
 
 suicide_plot <-
   suicide_long %>%
@@ -409,7 +412,7 @@ uae_plot
 
 ```{r include=FALSE}
 
-# Mapping
+# Creating map
 
 country_shapes <- rnaturalearth::ne_countries()
 
@@ -476,7 +479,7 @@ suicide_map_ggplotly <- ggplotly(suicide_map, tooltip = "text")
 
 ```{r include=FALSE}
 
-# Dynamic plots
+# Creating dynamic plots
 
 happy_suicide_plot <- 
   suicide_happy %>% 
