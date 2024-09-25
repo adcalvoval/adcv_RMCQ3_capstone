@@ -1,5 +1,8 @@
 # Comparing suicide rates with Human Development Index and Happiness Index scores (1990-2019)
 
+*Final Capstone project for the R Masterclass course, by [The GRAPH Network](https://thegraphcourses.org/)*
+
+
 ## Introduction
 
 Suicide is one of the leading causes of death worldwide, and is even on the rise in many countries. Certain populations and groups are particularly affected. For example, in the United Kingdom, suicide is thea leading cause of death for men under 50, and in recent years, the rate for young women under 24 has seen the steepest increase since records began. 
