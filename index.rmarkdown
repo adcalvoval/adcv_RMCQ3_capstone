@@ -1,0 +1,766 @@
+---
+title: "Analysis of Suicide and HDI Data (1990-2019)"
+author: "Adrián CALVO VALDERRAMA"
+format: 
+  dashboard:
+    nav-buttons: 
+    - icon: github
+      href: https://github.com/adcalvoval/adcv_RMCQ3_capstone
+      target: _blank
+    - icon: clipboard2-data
+      href: https://www.gapminder.org/data/
+      target: _blank
+    - icon: globe
+      href: https://data.worldbank.org/indicator/SP.POP.TOTL?most_recent_year_desc=false
+      target: _blank
+theme: flatly
+execute:
+  echo: false
+  warning: false
+  message: false
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+# Load packages 
+if(!require(pacman)) install.packages("pacman")
+pacman::p_load(tidyverse, 
+               here,
+               sf,
+               bslib, 
+               bsicons,
+               rnaturalearth, 
+               plotly, 
+               countrycode, 
+               htmltools, 
+               reactable,
+               janitor,
+               readxl,
+               poliscidata,
+               stringr,
+               formattable
+               )
+options(scipen = 999)
+```
+
+```{r}
+# Getting the data
+
+happy <- read_csv(here("data/hapiscore_whr.csv"))
+gdp <- read_csv(here("data/gdp_pcap.csv"))
+unemp_male <- read_csv((here("data/male_long_term_unemployment_rate_percent.csv")))
+suicide <- read_csv(here("data/suicide_total_deaths.csv"))
+geo <- read_excel(here("data/Data Geographies - v2 - by Gapminder (2).xlsx"), sheet = 2)
+pop <- read_csv(here("data/pop.csv")) # missing data for significant countries (e.g. China, India)
+pop2 <- read_csv(here("data/pop_wb.csv"))
+hdi<- read_csv(here("data/hdi_human_development_index.csv"))
+```
+
+```{r include=FALSE}
+suicide_clean <- 
+  suicide %>%
+  mutate(across(`1990`:`2019`, ~ str_replace_all(.x, "(\\d+\\.?\\d*)k", "\\1e3"))) %>%  
+  mutate(across(`1990`:`2019`, ~ str_replace_all(.x, "(\\d+\\.?\\d*)M", "\\1e6"))) %>%   
+  mutate(across(`1990`:`2019`, ~ as.numeric(.x)))  
+
+
+pop_wb_clean <- 
+  pop2 %>% 
+  select(!`Indicator Name`:`Indicator Code`) %>% 
+  rename(country = `Country Name`) %>% 
+  mutate(countries = case_when(
+    country == "United Kingdom" ~ "UK",
+    country == "United Arab Emirates" ~ "UAE",
+  TRUE ~ country  
+)) %>% 
+  select(!country) %>% 
+  select(countries, everything())
+
+View(pop_wb_clean)
+
+setdiff(suicide_clean$country, pop_wb_clean$country)
+setdiff(pop_wb_clean$country, suicide_clean$country)
+
+suicide_clean <- 
+  suicide_clean %>% 
+  mutate(countries = case_when(
+  country == "Bahamas" ~ "Bahamas, The",
+  country == "Brunei" ~ "Brunei Darussalam",
+  country == "Congo, Democratic Republic of the" ~ "Congo, Dem. Rep.",
+  country == "Congo, Republic of the" ~ "Congo, Rep.",
+  country == "Cape Verde" ~ "Cabo Verde",
+  country == "Czech Republic" ~ "Czechia",
+  country == "Egypt" ~ "Egypt, Arab Rep.",
+  country == "Iran" ~ "Iran, Islamic Rep.",
+  country == "Kyrgyzstan" ~ "Kyrgyz Republic",
+  country == "Korea, South" ~ "Korea, Rep.",
+  country == "Laos" ~ "Lao PDR",
+  country == "Macedonia" ~ "North Macedonia",
+  country == "Burma (Myanmar)" ~ "Myanmar",
+  country == "Korea, North" ~ "Korea, Dem. People's Rep.",
+  country == "Russia" ~ "Russian Federation",
+  country == "Slovakia" ~ "Slovak Republic",
+  country == "Swaziland" ~ "Eswatini",
+  country == "Syria" ~ "Syrian Arab Republic",
+  country == "Turkey" ~ "Turkiye",
+  country == "Venezuela" ~ "Venezuela, RB",
+  country == "Vietnam" ~ "Viet Nam",
+  country == "Yemen" ~ "Yemen, Rep.",
+  country == "USA" ~ "United States",
+  TRUE ~ country  
+)) %>% 
+  select(!country) %>% 
+  select(countries, everything())
+
+View(suicide_clean)
+
+suicide_19 <- 
+  suicide_clean %>% 
+  select(countries, `2019`) %>% 
+  rename(suicides_19 = `2019`)
+
+
+suicide_90_19 <-
+  suicide_clean %>% 
+  select(countries, `1990`, `2019`) %>% 
+  mutate(pct_increase = round(((`2019`-`1990`)/`1990`)*100))
+
+highest_suicide_country <- 
+  suicide_19 %>% 
+  arrange(desc(suicides_19)) %>% 
+  head(1) %>% 
+  pull(countries)
+
+pop_wb_clean_19 <-
+    pop_wb_clean %>% 
+      select(countries, `2019`) %>%
+      rename(pop_19 = `2019`)
+
+View(pop_wb_clean_19)
+
+
+suicide_pop_19 <-
+  suicide_19 %>% 
+  left_join(pop_wb_clean_19, 
+            by = "countries") %>%  
+  mutate(suicide_per10K = round((`suicides_19`/`pop_19`)*10000, 2))
+
+View(suicide_pop_19)
+
+suicide_long <-
+  suicide_clean %>% 
+  pivot_longer(cols = `1990`:`2019`,
+               names_to = "year",
+               values_to = "suicides")
+
+highest_suicide_country_10K <- 
+  suicide_pop_19 %>% 
+  arrange(desc(suicide_per10K)) %>% 
+  head(1) %>% 
+  pull(countries)
+
+total_suicide_greenland_19 <-
+  suicide_pop_19 %>% 
+  arrange(desc(suicide_per10K)) %>% 
+  head(1) %>% 
+  pull(suicides_19)
+
+highest_suicide_19 <-
+  suicide_pop_19 %>% 
+  arrange(desc(suicides_19)) %>% 
+  head(1) %>% 
+  pull(suicides_19)
+
+highest_suicide_country <-
+  suicide_pop_19 %>% 
+  arrange(desc(suicides_19)) %>% 
+  head(1) %>% 
+  pull(countries)
+
+highest_increase_90_19_country <-
+  suicide_90_19 %>% 
+  arrange(desc(pct_increase)) %>% 
+  head(1) %>% 
+  pull(countries)
+
+highest_increase_90_19 <-
+  suicide_90_19 %>% 
+  arrange(desc(pct_increase)) %>% 
+  head(1) %>% 
+  pull(pct_increase)
+
+
+happy_clean <- 
+  happy %>% 
+  select(country, `2005`:`2019`) %>% 
+  pivot_longer(cols = `2005`:`2019`,
+               names_to = "year",
+               values_to = "happindex") %>% 
+  mutate(countries = 
+           case_when( 
+             country == "USA" ~ "United States",
+             country == "Venezuela" ~ "Venezuela, RB",
+             country == "Czech Republic" ~ "Czechia",
+             country == "Russia" ~ "Russian Federation",
+             country == "Egypt" ~ "Egypt, Arab Rep.",
+             country == "Syria" ~ "Syrian Arab Republic",
+             country == "Vietnam" ~ "Viet Nam",
+             country == "Yemen" ~ "Yemen, Rep.",
+             country == "Turkey" ~ "Turkiye",
+         TRUE ~ country)) %>% 
+  select(!country) %>% 
+  select(countries, everything()) %>% 
+  mutate(year = as.numeric(year))
+
+View(happy_clean)
+
+suicide_long <-
+  suicide_clean %>%
+  pivot_longer(cols = `1990`:`2019`,
+               names_to = "year",
+               values_to = "suicides") %>% 
+  mutate(year = as.numeric(year))
+
+View(suicide_long)
+
+
+setdiff(suicide_long$countries, happy_clean$countries)
+setdiff(happy_clean$countries, suicide_long$countries)
+
+
+suicide_happy <- 
+  left_join(suicide_long, happy_clean, by = c("countries", "year"))
+
+View(suicide_happy)
+
+hdi_long <-
+  hdi %>% 
+  select(country, `1990`:`2019`) %>% 
+  pivot_longer(cols = `1990`:`2019`,
+               names_to = "year",
+               values_to = "hdi")  %>% 
+  mutate(countries = 
+           case_when( 
+             country == "USA" ~ "United States",
+             country == "Russia" ~ "Russian Federation",
+         TRUE ~ country)) %>% 
+  select(!country) %>% 
+  select(countries, everything()) %>% 
+  mutate(year = as.numeric(year))
+  
+
+View(hdi_long)
+
+top_hdi <- 
+  hdi_long %>%
+    group_by(year) %>%
+    slice_max(hdi, n = 1) %>%  
+    select(year, countries, hdi)  
+
+View(top_hdi)
+
+
+setdiff(happy_clean$countries, hdi$country)
+setdiff(hdi$country, happy_clean$countries)
+
+pop_long <-
+  pop_wb_clean %>% 
+  select(!`Country Code`) %>% 
+  select(!`1960`:`1989`) %>% 
+  select(!`2020`:`2023`) %>% 
+  pivot_longer(cols = `1990`:`2019`,
+               names_to = "year",
+               values_to = "population") %>% 
+  mutate(countries = 
+           case_when( 
+             countries == "United Arab Emirates" ~ "UAE",
+             countries == "United Kingdom" ~ "UK",
+             countries == "Korea, Rep." ~ "South Korea",
+             countries == "Korea, Dem. People's Rep." ~ "North Korea",
+             countries == "Lao PDR" ~ "Lao",
+             countries == "West Bank and Gaza" ~ "Palestine",
+             countries == "Gambia, The" ~ "Gambia",
+         TRUE ~ countries)) %>% 
+  mutate(year = as.numeric(year))
+
+View(pop_long)
+
+setdiff(pop_long$countries, suicide_happy$countries)
+setdiff(suicide_happy$countries, pop_long$countries)
+
+suicide_happy_pop <-
+  left_join(pop_long, suicide_happy, by = c("countries","year"))
+
+View(suicide_happy_pop)
+
+setdiff(suicide_happy_pop$countries, hdi_long$countries)
+setdiff(hdi_long$countries, suicide_happy_pop$countries)
+
+complete_data <-
+  left_join(suicide_happy_pop, hdi_long, by = c("countries", "year"))
+
+View(complete_data)
+```
+
+```{r include=FALSE}
+
+# Plots
+
+suicide_plot <-
+  suicide_long %>%
+  filter(suicides > 10000) %>%
+ ggplot(aes(x = year,
+            y = suicides,
+            frame = year,
+            color = countries)) +
+ geom_point() +
+ theme_minimal()
+
+suicide_ggplotly <- ggplotly(suicide_plot)
+
+
+
+top_6_graph <-
+  suicide_long %>%
+  filter(countries %in% c("Lesotho", "Guyana", "Suriname", "Greenland", "Lithuania", "UAE")) %>% 
+      ggplot() +
+  geom_line(aes(x = year,
+                y = suicides,
+                group = countries,
+                colour = countries)) + 
+  theme_grey()+
+  facet_wrap(~countries) +
+  labs(x = "Year",
+       y = "Suicides",
+       colour = "Countries",
+       title =  str_wrap("Evolution of the number of reported suicides between 1990 and 2019 in highest reporting countries per 10,000 people", width = 80)) +
+  scale_x_continuous(breaks = seq(from = 1990, to = 2020, by = 10))
+
+top_6_graph
+
+top_5_countries <- 
+  suicide_19 %>% 
+  arrange(desc(suicides_19)) %>% 
+  head(5) %>% 
+  mutate(tooltip_label = paste(countries, 
+                               suicides_19, 
+                               sep = ": ")) %>% 
+  ggplot(aes(y = reorder(countries, suicides_19), 
+             x = suicides_19, 
+             fill = suicides_19, 
+             text = tooltip_label)) + 
+  geom_col() +  
+  labs(y = "Country", 
+       x = "Number of Suicides") + 
+  theme(legend.position = "none") 
+
+
+top_5_countries_ggplotly <- 
+  ggplotly(top_5_countries, tooltip = "text")
+
+top_5_countries_ggplotly
+
+
+
+top_5_countries_10k <- 
+  suicide_pop_19 %>% 
+  arrange(desc(suicide_per10K)) %>% 
+  head(5) %>% 
+  mutate(tooltip_label = paste(countries, 
+                               suicide_per10K, 
+                               sep = ": ")) %>% 
+  ggplot(aes(y = reorder(countries, suicide_per10K), 
+             x = suicide_per10K, 
+             fill = round(suicide_per10K, 2), 
+             text = tooltip_label)) + 
+  geom_col() +  
+  labs(y = "Country", 
+       x = "Number of Suicides per 10,000 people") + 
+  theme(legend.position = "none") 
+
+
+
+top_5_countries_10k_ggplotly <- 
+  ggplotly(top_5_countries_10k, tooltip = "text")
+
+top_5_countries_10k_ggplotly
+
+
+uae_plot <- complete_data %>% 
+  filter(countries == "UAE") %>% 
+  mutate(year = as.numeric(year)) %>% 
+  ggplot(aes(x = year)) +
+  geom_line(aes(y = suicides), color = "blue", group = 1) + 
+  geom_line(aes(y = population / 1000), color = "red", group = 1) +  
+  scale_y_continuous(
+    name = "Suicides",
+    sec.axis = sec_axis(~ . * 1000, name = "Population")
+  ) +
+  labs(title = "Suicides vs Population in UAE", x = "Year") +
+  scale_x_continuous(breaks = seq(from = 1990, to = 2020, by = 5)) + 
+  theme_grey() 
+  
+uae_plot
+
+```
+
+```{r include=FALSE}
+
+# Mapping
+
+country_shapes <- rnaturalearth::ne_countries()
+
+setdiff(suicide_pop_19$countries, country_shapes$sovereignt)
+setdiff(country_shapes$sovereignt, suicide_pop_19$countries)
+
+
+suicide_geo <- 
+  suicide_pop_19 %>% 
+     mutate(country = case_when(
+        countries == "Congo, Dem. Rep." ~ "Democratic Republic of the Congo",
+        countries == "Congo, Rep." ~ "Republic of the Congo",
+        countries == "Tanzania" ~ "United Republic of Tanzania",
+        countries == "Bahamas, The" ~ "The Bahamas",
+        countries == "Russian Federation" ~ "Russia",
+        countries == "Timor-Leste" ~ "East Timor",
+        countries == "Venezuela, RB" ~ "Venezuela",
+        countries == "Cote d'Ivoire" ~ "Ivory Coast",
+        countries == "Eswatini" ~ "eSwatini",
+        countries == "UAE" ~ "United Arab Emirates",
+        countries == "Lao" ~ "Laos",
+        countries == "Viet Nam" ~ "Vietnam",
+        countries == "Kyrgyz Republic" ~ "Kyrgyzstan",
+        countries == "Iran, Islamic Rep." ~ "Iran",
+        countries == "Syrian Arab Republic" ~ "Syria",
+        countries == "Turkiye" ~ "Turkey",
+        countries == "Brunei Darussalam" ~ "Brunei",
+        countries == "Slovak Republic" ~ "Slovakia",
+        countries == "Yemen, Rep." ~ "Yemen",
+        countries == "Egypt, Arab Rep." ~ "Egypt",
+        countries == "Serbia" ~ "Republic of Serbia",
+        TRUE ~ countries
+      )) %>% 
+          select(!country) %>% 
+          select(countries, everything())
+
+View(suicide_geo)
+
+
+setdiff(suicide_geo$countries, country_shapes$sovereignt)
+
+suicide_geo <- 
+  suicide_geo %>% 
+  mutate(
+    country_code = countrycode(countries, 
+                               "country.name", 
+                               "iso3c"))
+
+View(suicide_geo)
+
+suicide_map <- 
+  left_join(country_shapes, suicide_geo,
+          by = c("adm0_a3" = "country_code")) %>% 
+  mutate(tooltip_label = paste(countries,
+                               round(suicide_per10K, 2), 
+                               sep = ": ")) %>% 
+  ggplot() + 
+  geom_sf(aes(fill = suicide_per10K, text = tooltip_label)) + 
+  theme_void()+ 
+  theme(legend.position = "none")
+
+suicide_map_ggplotly <- ggplotly(suicide_map, tooltip = "text") 
+```
+
+```{r include=FALSE}
+
+# Dynamic plots
+
+happy_suicide_plot <- 
+  suicide_happy %>% 
+  filter(year > 2005) %>% 
+  filter(countries %in% c("Lesotho", "Ukraine", "Lithuania", "Guyana", "Greenland")) %>% 
+ ggplot(aes(x = suicides, 
+            y = happindex, 
+            frame = year,
+            color = countries)) +
+ geom_point() +
+ scale_x_log10() +
+ theme_minimal() +
+  labs(x = "Suicides",
+       y = "Happiness Index",
+       colour = "Countries")
+  
+happy_suicide_ggplotly <-
+  ggplotly(happy_suicide_plot)
+
+happy_suicide_ggplotly
+
+complete_plot_10k <- 
+  complete_data %>% 
+  filter(year > 2005) %>% 
+  filter(countries %in% c("Lesotho", "Ukraine", "Greenland", "Guyana", "Lithuania")) %>% 
+ ggplot(aes(x = suicides, 
+            y = hdi, 
+            frame = year,
+            color = countries)) +
+ geom_point() +
+ theme_minimal() +
+  labs(x = "Suicides",
+       y = "Human Development Index",
+       colour = "Countries")
+
+
+complete_plot_top <- 
+  complete_data %>% 
+  filter(year > 2005) %>% 
+  filter(countries %in% c("United States", "Russian Federation", "India", "China", "Japan")) %>% 
+ ggplot(aes(x = suicides, 
+            y = hdi, 
+            frame = year,
+            color = countries)) +
+ geom_point() +
+ scale_x_log10() +
+ theme_minimal() +
+  labs(x = "Suicides",
+       y = "Human Development Index",
+       colour = "Countries")
+
+plot_top_hdi <- 
+  complete_data %>% 
+  filter(year > 2005) %>% 
+  filter(countries %in% c("United States", "Switzerland", "Norway")) %>% 
+ ggplot(aes(x = suicides, 
+            y = hdi, 
+            frame = year,
+            color = countries)) +
+ geom_point() +
+ scale_x_log10() +
+ theme_minimal() +
+  labs(x = "Suicides",
+       y = "Human Development Index",
+       colour = "Countries")
+
+
+hdi_suicide_uae <- 
+  complete_data %>% 
+  filter(year > 2005) %>% 
+  filter(countries == "UAE") %>% 
+ ggplot(aes(x = suicides, 
+            y = hdi, 
+            frame = year,
+            color = countries)) +
+ geom_point() +
+ scale_x_log10() +
+ theme_minimal() +
+  labs(x = "Suicides",
+       y = "Human Development Index",
+       colour = "Country")
+
+complete_10k_ggplotly <- ggplotly(complete_plot_10k)
+
+complete_top_ggplotly <- ggplotly(complete_plot_top)
+
+top_hdi_ggplotly <- ggplotly(plot_top_hdi)
+
+uae_ggplotly <- ggplotly(hdi_suicide_uae)
+```
+
+
+
+
+# HOME
+
+## Row 1 {height="25%"}
+
+
+```{r}
+value_box(
+  title = "Country with highest number of suicides in 2019",
+  value = tags$p(highest_suicide_country, style = "font-size: 250%;"),
+  showcase = bsicons::bs_icon("geo"),
+  theme = value_box_theme(bg = "#214773"),
+  p(paste0("Number of suicides in 2019: ", highest_suicide_19))
+)
+```
+
+```{r}
+value_box(
+  title = "Country with highest number of suicides per 10,000 people in 2019",
+  value = tags$p(highest_suicide_country_10K, style = "font-size: 250%;"),
+  showcase = bsicons::bs_icon("geo-fill"),
+  theme = value_box_theme(bg = "#518fd6"),
+  p(paste0("Number of suicides in 2019: ", total_suicide_greenland_19))
+)
+```
+
+```{r}
+value_box(
+  title = "Country with highest relative increase in the reported number of suicides",
+  value = tags$p(highest_increase_90_19_country, style = "font-size: 250%;"),
+  showcase = bsicons::bs_icon("graph-up-arrow"),
+  theme = value_box_theme(bg = "#701515"),
+  p(paste0("Increase between 1990 and 2019: ", highest_increase_90_19, " %"))
+)
+```
+
+
+## Row 2 {height="75%"}
+
+###  {width="60%"}
+
+
+```{r title = "Number of suicides per 10,000 people per country in 2019"}
+suicide_map_ggplotly 
+```
+
+
+###  {width="40%"}
+
+####  {height="50%"}
+
+
+```{r title = "Top 5 countries: number of suicides in 2019"}
+top_5_countries_ggplotly
+```
+
+
+####  {height="50%"}
+
+
+```{r title = "Top 5 countries: number of suicides per 10,000 people in 2019"}
+top_5_countries_10k_ggplotly
+```
+
+
+# HDI
+
+## {height="50%" .flow}
+
+### {width="50%"}
+
+
+The Human Development Index (HDI) contains three dimensions: health, education and living standards.
+
+Comparing suicide rates and HDI score over the years provides use with some interesting insights on the possible relationship between these variables. 
+
+In most cases, an increase in the HDI score seems to lead to a decrease in suicides, or to very small fluctuations. 
+
+There are however a few interesting outliers: although Japan, Russia and China see a combined increase in their HDI score and steady decrease in suicide rates, the United States sees an increase in suicides. India sees its suicide rate fluctuate up and down, as its HDI slowly increases.
+
+Switzerland, Norway, Lesotho, Guyana and Lithuania all see increases in HDI score and stagnating or decreasing suicide rates. Ukraine, however, shows seemingly much stronger fluctuations in the reported number of suicides (both up and down).
+
+### {width="50%"}
+
+
+```{r title = "Evolution of suicide rates and HDI in countries with highest number of suicides"}
+complete_top_ggplotly
+```
+
+
+
+## {height="50%" .flow}
+
+### {width="50%"}
+
+
+```{r title = "Evolution of suicide rate and HDI in the countries with highest HDI" }
+top_hdi_ggplotly
+```
+
+
+### {width="50%"}
+
+
+
+```{r title = "Evolution of suicide rates and HDI in countries with highest number of suicides per 10,000 people"}
+complete_10k_ggplotly
+```
+
+
+
+# DATA
+
+## {height="50%"}
+
+### {width="50%"}
+
+
+```{r title = "Evolution of suicide rate and population size in the UAE"}
+uae_plot
+```
+
+
+### {width="50%"}
+
+The UAE shows the greatest relative increase in the reported number of suicides between 1990 and 2019 (almost 500%). When comparing to population data (red curve), we can see the increase in the number of reported suicides (blue curve) is most likely linked to the demographic explosion the country has known in recent decades, particularly in cities such as Dubai and Abu Dhabi.
+
+The Happiness Score (WHR) represents the  national average response to the question of life evaluations asking the following “Please imagine a ladder, with steps numbered from 0 at the bottom to 10 at the top. The top of the ladder represents the best possible life for you and the bottom of the ladder represents the worst possible life for you. On which step of the ladder would you say you personally feel you stand at this time?” This measure is also referred to as Cantril life ladder.
+
+Comparing the suicide rates with the WHR shows a similar trend as with the HDI. Although the data is limited, increases in the WHR score do not show increases in suicide rates. Conversely, a decrease in the WHR score for the countries in scope (those with higher number of reported suicides per 10,000 people) do not show an increase in the number of reported suicides.
+
+This unfortunately excludes Greenland, for which this data is not available, despite having the highest number of reported suicides per 10,000 people.
+
+The graphs below also illustrate the difference in types of fluctuation in rates among the 5 countries with the highest number of reported suicides, as well as the UAE. It shows that both Lesotho and the UAE have significantly more marked increases between 1990 and 2019, although the UAE's case is maked by the huge population growth in the last 20 years. Lesotho's population growth has however been much steadier, indicating a more pronounce increase in reported suicides, relative to population growth. Greenland's rate, with the highest number of suicides per 10,000 people, has remain constant since 1990, whereas Lithuania has seen a significant and constant decrease since a peak in the mid 1990's.
+
+## {height="50%"}
+
+### {width="50%"}
+
+
+```{r}
+happy_suicide_ggplotly
+```
+
+
+### {width="50%"}
+
+ 	
+
+```{r}
+top_6_graph
+```
+
+ 	
+
+# DOWNLOAD
+
+The data used in this dashboard is shown below and can be downloaded as a CSV. It combines annual figures for suicides, the Happiness Index and Human Development Index scores, from 1990 and 2019.
+
+Although quite comprehensive, the dataset includes some missing values for some countries in some years, mainly due to the different time frames of each dataset used as part of this analysis.
+
+The original datasets used for this analysis can also be found at the top right of this page, as well as the R code.
+
+
+
+
+```{r}
+library(htmltools)
+
+htmltools::browsable(
+  tagList(
+    reactable(complete_data, 
+              elementId = "complete_data", 
+              searchable = T, 
+              filterable = T), 
+    
+tags$button("Download as CSV", 
+            onclick = "Reactable.downloadDataCSV('complete_data')")
+  )
+)
+```
+
+
+# ABOUT
+
+The data used for this analysis comes in part from the r `gapminder` package, and is originally sourced from the Gapminder Foundation. 
+
+Additionally, population data from the World Bank was used.
+
+
+
+The Gapminder Foundation is a non-profit venture registered in Stockholm, Sweden, that promotes sustainable global development and achievement of the United Nations Millennium Development Goals by increased use and understanding of statistics and other information about social, economic, and environmental development at local, national, and global levels.
+
+Gapminder was founded in 2005 by Ola Rosling, Anna Rosling Rönnlund, and Hans Rosling. The name Gapminder was derived from the "Mind the Gap" warning messages on the London Underground.
+
+
